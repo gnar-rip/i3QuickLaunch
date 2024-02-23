@@ -1,4 +1,4 @@
-# Custom Program Launcher for Arch Linux
+# Custom Program Launcher for Arch Linux & i3WM
 
 This custom program launcher is designed for Arch Linux users who seek a lightweight, efficient, and highly customizable alternative to traditional application launchers. Integrated seamlessly with the i3 window manager, this launcher not only allows you to quickly find and launch your applications but also provides real-time insights into their resource usage, locations, and update status.
 
