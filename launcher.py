@@ -102,7 +102,7 @@ class LauncherWindow(Gtk.Window):
         # Connect the list.box click so we can workaround the single click issue
         self.listbox.connect("button-press-event", self.on_listbox_click)
         
-        # Allow "enter" to launch programs. This may override double click functionality - DO NOT LOSE THIS LINE OF CODE AND FIX IMEDIATELY IF BROKEN YOU FUCKIN DUMBASS
+        # Allow "enter" to launch programs. Fixed double click override.
         self.listbox.connect("row-activated", self.on_row_activated)
 
 
