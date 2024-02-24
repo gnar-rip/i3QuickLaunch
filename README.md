@@ -62,6 +62,5 @@ Contributions are warmly welcomed! If you're interested in adding new features, 
 ## License
 
 This project is distributed under the MIT License - see the LICENSE file for details.
-```
 
 
