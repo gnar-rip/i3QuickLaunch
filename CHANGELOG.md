@@ -22,7 +22,7 @@ All notable changes to this project will be documented in this file. The format 
 - Addressed a bug where the launcher would not correctly differentiate between keyboard and mouse actions, leading to unintended program launches.
 - Fixed an error related to variable scope in the `on_search_changed` method, ensuring the launcher dynamically updates the program list without crashing.
 
-## [0.1.0] - 2023-02-24
+## [0.1.0] - 2024-02-24
 
 ### Added
 - Initial release of the launcher with basic functionality to list installed applications and launch them via a graphical interface.
