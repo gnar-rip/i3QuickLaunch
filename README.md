@@ -1,3 +1,4 @@
+```
 # Custom Program Launcher for Arch Linux & i3WM
 
 This custom program launcher, tailored for Arch Linux users and seamlessly integrated with the i3 window manager, offers a lightweight, efficient, and customizable solution for managing and launching applications. With enhanced features focusing on usability and system insights, this launcher elevates your desktop experience by providing detailed information about your applications at a glance.
@@ -14,30 +15,36 @@ This custom program launcher, tailored for Arch Linux users and seamlessly integ
 
 ## Installation
 
-Ensure Python and GTK+ for Python (PyGObject) are installed on your system, along with the `psutil` and `i3ipc` libraries for full functionality.
+To install this program launcher, ensure Python and GTK+ for Python (PyGObject) are installed on your system. You will also need the `psutil` and `i3ipc` libraries for full functionality. 
 
-1. **Install GTK+ for Python (PyGObject) and required libraries**:
+1. **Install Required Packages**:
 
-   ```sh
+   ```
    sudo pacman -S python-gobject gtk3
    pip install psutil i3ipc
    ```
 
-2. **Clone the repository**:
+2. **Clone the Repository** (replace `<repository-url>` with the actual URL of the repository):
 
-   ```sh
-   git clone https://github.com/gnar-rip/i3QuickLaunch.git
-   cd i3QuickLaunch
+   ```
+   git clone <repository-url>
+   cd <repository-directory>
    ```
 
 3. **Install the Launcher**:
 
-   ```python setup.py install
-   ```
-   **Alternatively, for a development setup or to run directly without installing:**
+   Using the `setup.py` file, you can easily install the launcher with:
 
-   ```python launcher.py
    ```
+   python setup.py install
+   ```
+
+   Alternatively, for a development setup or to run directly without installing:
+
+   ```
+   python launcher.py
+   ```
+
 ## Usage
 
 - **Launching an Application**: Double-click on an application name or select it and press Enter to launch.
@@ -55,4 +62,6 @@ Contributions are warmly welcomed! If you're interested in adding new features, 
 ## License
 
 This project is distributed under the MIT License - see the LICENSE file for details.
+```
+
 
