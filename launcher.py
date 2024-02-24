@@ -6,8 +6,10 @@ import json
 
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
+from gi.repository import Gdk
 
-usage_file_path = "usage.json"
+# file path for testing purposes only, clean up before release
+usage_file_path = "/home/gnar/Programs/gnardev/launcher/usage.json"
 
 def load_usage_counts():
     try:
@@ -66,6 +68,9 @@ class LauncherWindow(Gtk.Window):
 
         # Connect to the 'realize' signal to hide details after the window is fully initialized
         self.connect("realize", lambda _: self.hide_all_details())
+        
+        # Connect the list.box click so we can workaround the single click issue
+        self.listbox.connect("button-press-event", self.on_listbox_click)
 
     def populate_programs(self):
         desktop_files_dir = '/usr/share/applications'
@@ -96,6 +101,13 @@ class LauncherWindow(Gtk.Window):
         search_text = entry.get_text().lower()
         for row in self.listbox.get_children():
             row.set_visible(search_text in row.name.lower())
+            
+    def on_listbox_click(self, widget, event):
+    # GDK_2BUTTON_PRESS is the constant for a double-click event.
+        if event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS:
+            row = self.listbox.get_selected_row()
+            if row:
+                row.launch_program()
 
 def main():
     win = LauncherWindow()
