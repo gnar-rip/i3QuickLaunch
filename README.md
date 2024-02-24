@@ -23,11 +23,11 @@ To install this program launcher, ensure Python and GTK+ for Python (PyGObject) 
    pip install psutil i3ipc
    ```
 
-2. **Clone the Repository** (replace `<repository-url>` with the actual URL of the repository):
+2. **Clone the Repository**:
 
    ```
-   git clone <repository-url>
-   cd <repository-directory>
+   git clone https://github.com/gnar-rip/i3QuickLaunch.git
+   cd i3QuickLaunch
    ```
 
 3. **Install the Launcher**:
