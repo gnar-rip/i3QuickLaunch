@@ -12,15 +12,18 @@ All notable changes to this project will be documented in this file. The format 
 - Functionality to hide and show details of each program dynamically, improving information management and UI cleanliness.
 - Double-click and "Enter" key activation for launching programs, offering users multiple intuitive ways to interact with the launcher.
 - Keyboard and mouse event differentiation, allowing for precise user interaction handling and preventing conflicts between input methods.
+- Dynamic resolution of `usage.json` file path using the XDG Base Directory Specification to enhance compatibility and predictability of user data storage.
 
 ### Changed
 - Refined the program listing process to only show "favorite" programs initially, with the capability to dynamically update the list based on search input.
 - Enhanced the user interface and interaction feedback, such as highlighting and detail visibility, to be more responsive and intuitive.
+- Adjusted `usage.json` storage logic to comply with XDG standards, ensuring user data is stored in a standardized and expected location across different Linux environments.
 
 ### Fixed
 - Resolved issues where program details were incorrectly shown or hidden due to event handling conflicts.
 - Addressed a bug where the launcher would not correctly differentiate between keyboard and mouse actions, leading to unintended program launches.
 - Fixed an error related to variable scope in the `on_search_changed` method, ensuring the launcher dynamically updates the program list without crashing.
+- Corrected the handling of `usage.json` to dynamically determine its path, addressing potential issues with file access across various user environments.
 
 ## [0.1.0] - 2024-02-24
 
@@ -31,3 +34,4 @@ All notable changes to this project will be documented in this file. The format 
 ### Known Issues
 - Program details are not dynamically managed based on user interaction.
 - Lack of differentiation between input methods for program activation.
+
