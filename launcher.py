@@ -48,6 +48,9 @@ class ProgramRow(Gtk.ListBoxRow):
 class LauncherWindow(Gtk.Window):
     def __init__(self):
         super().__init__(title="Program Launcher")
+        # Initialize the flag to track the last action type ('keyboard' or 'mouse')
+        self.last_action_type = None
+        self.connect("key-press-event", self.on_key_press)
         self.set_border_width(10)
         self.set_default_size(400, 600)
         self.usage_counts = load_usage_counts()
@@ -71,6 +74,10 @@ class LauncherWindow(Gtk.Window):
         
         # Connect the list.box click so we can workaround the single click issue
         self.listbox.connect("button-press-event", self.on_listbox_click)
+        
+        # Allow "enter" to launch programs. This may override double click functionality - DO NOT LOSE THIS LINE OF CODE AND FIX IMEDIATELY IF BROKEN YOU FUCKIN DUMBASS
+        self.listbox.connect("row-activated", self.on_row_activated)
+
 
     def populate_programs(self):
         desktop_files_dir = '/usr/share/applications'
@@ -145,11 +152,24 @@ class LauncherWindow(Gtk.Window):
         self.hide_all_details()
         
     def on_listbox_click(self, widget, event):
+        self.last_action_type = 'mouse'
     # GDK_2BUTTON_PRESS is the constant for a double-click event.
         if event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS:
             row = self.listbox.get_selected_row()
             if row:
                 row.launch_program()
+                
+    def on_row_activated(self, listbox, row):
+        if self.last_action_type == 'keyboard':
+            if row is not None:
+                row.launch_program()
+        # Reset the flag after handling the activation
+        self.last_action_type = None
+                
+    def on_key_press(self, widget, event):
+        if event.keyval == Gdk.KEY_Return:  # Check if the "Enter" key was pressed
+            self.last_action_type = 'keyboard'
+
 
 def main():
     win = LauncherWindow()
