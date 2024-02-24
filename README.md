@@ -26,16 +26,18 @@ Ensure Python and GTK+ for Python (PyGObject) are installed on your system, alon
 2. **Clone the repository**:
 
    ```sh
-   git clone <repository-url>
-   cd <repository-directory>
+   git clone https://github.com/gnar-rip/i3QuickLaunch.git
+   cd i3QuickLaunch
    ```
 
-3. **Run the launcher**:
+3. **Install the Launcher**:
 
-   ```sh
-   python launcher.py
+   ```python setup.py install
    ```
+   **Alternatively, for a development setup or to run directly without installing:**
 
+   ```python launcher.py
+   ```
 ## Usage
 
 - **Launching an Application**: Double-click on an application name or select it and press Enter to launch.
