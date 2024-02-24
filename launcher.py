@@ -8,19 +8,46 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
 
-# file path for testing purposes only, clean up before release
-usage_file_path = "/home/gnar/Programs/gnardev/launcher/usage.json"
+def get_usage_file_path():
+    app_name = "i3QuickLaunch"  # Example application name
+    default_data_home = os.path.join(os.path.expanduser("~"), ".local", "share")
+    data_home = os.getenv("XDG_DATA_HOME", default_data_home)
+
+    usage_file_path = os.path.join(data_home, app_name, "usage.json")
+
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(usage_file_path), exist_ok=True)
+    
+    return usage_file_path
+
+def load_or_initialize_usage_data():
+    usage_file_path = get_usage_file_path()
+    
+    if not os.path.exists(usage_file_path):
+        return {}  # Initialize to an empty dict if the file doesn't exist
+
+    with open(usage_file_path, 'r') as file:
+        return json.load(file)
+
+# Example usage within your launcher application
+usage_data = load_or_initialize_usage_data()
 
 def load_usage_counts():
-    try:
-        with open(usage_file_path, 'r') as file:
-            return json.load(file)
-    except FileNotFoundError:
-        return {}
+    usage_file_path = get_usage_file_path()  # Call the function to get the path
+    if not os.path.exists(usage_file_path):
+        return {}  # Initialize to an empty dict if the file doesn't exist
+    
+    with open(usage_file_path, 'r') as file:
+        return json.load(file)
 
 def update_usage_count(program_name):
-    usage_counts = load_usage_counts()
+    usage_file_path = get_usage_file_path()  # Dynamically get the file path
+    usage_counts = load_usage_counts()  # Load the current usage counts
+    
+    # Update the usage count for the specified program
     usage_counts[program_name] = usage_counts.get(program_name, 0) + 1
+    
+    # Write the updated usage counts back to the file
     with open(usage_file_path, 'w') as file:
         json.dump(usage_counts, file, indent=4)
 
