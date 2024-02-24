@@ -74,19 +74,34 @@ class LauncherWindow(Gtk.Window):
 
     def populate_programs(self):
         desktop_files_dir = '/usr/share/applications'
+        program_usage = load_usage_counts()  # Load the usage counts
+
+        programs = []
+
         for item in os.listdir(desktop_files_dir):
             if item.endswith('.desktop'):
                 config = RawConfigParser()
                 config.read(os.path.join(desktop_files_dir, item))
-                try:
-                    name = config.get('Desktop Entry', 'Name')
-                    exec_cmd = config.get('Desktop Entry', 'Exec').split()[0]
-                    exec_cmd = exec_cmd.partition('%')[0].strip()
-                    usage_count = self.usage_counts.get(name, 0)
-                    program_row = ProgramRow(name, exec_cmd, usage_count)
-                    self.listbox.add(program_row)
-                except NoSectionError:
-                    continue
+            try:
+                name = config.get('Desktop Entry', 'Name')
+                exec_cmd = config.get('Desktop Entry', 'Exec').split()[0]
+                exec_cmd = exec_cmd.partition('%')[0].strip()
+                usage_count = program_usage.get(name, 0)  # Use 0 as default if not found
+                # Append all programs but later add conditionally to the listbox based on usage_count
+                programs.append((name, exec_cmd, usage_count))
+            except NoSectionError:
+                continue
+
+    # Sort programs by usage count in descending order, then by name
+        programs.sort(key=lambda x: (-x[2], x[0]))
+
+    # Populate the listbox with sorted programs, adding only if usage_count > 0
+        for name, exec_cmd, usage_count in programs:
+            if usage_count > 0:  # Add condition here
+                program_row = ProgramRow(name, exec_cmd, usage_count)
+                self.listbox.add(program_row)
+    
+        self.listbox.show_all()
 
     def hide_all_details(self):
         for row in self.listbox.get_children():
@@ -99,9 +114,36 @@ class LauncherWindow(Gtk.Window):
 
     def on_search_changed(self, entry):
         search_text = entry.get_text().lower()
-        for row in self.listbox.get_children():
-            row.set_visible(search_text in row.name.lower())
-            
+    # Clear the listbox before repopulating based on search
+        self.listbox.foreach(lambda widget: self.listbox.remove(widget))
+
+        desktop_files_dir = '/usr/share/applications'  # Ensure this is defined outside the loop
+        program_usage = load_usage_counts()
+
+        if search_text == "":
+        # If the search field is cleared, repopulate with favorites
+            self.populate_programs()
+        else:
+        # Dynamically add both favorites and matching non-favorites
+            for item in os.listdir(desktop_files_dir):
+                if item.endswith('.desktop'):
+                    config = RawConfigParser()
+                    config.read(os.path.join(desktop_files_dir, item))
+                try:
+                    name = config.get('Desktop Entry', 'Name').strip()
+                    if search_text in name.lower():
+                        exec_cmd = config.get('Desktop Entry', 'Exec').split()[0]
+                        exec_cmd = exec_cmd.partition('%')[0].strip()
+                        usage_count = program_usage.get(name, 0)
+                        program_row = ProgramRow(name, exec_cmd, usage_count)
+                        self.listbox.add(program_row)
+                except NoSectionError:
+                    continue
+
+        self.listbox.show_all()
+        # Explicitly call hide_all_details to ensure all program details are hidden after repopulation
+        self.hide_all_details()
+        
     def on_listbox_click(self, widget, event):
     # GDK_2BUTTON_PRESS is the constant for a double-click event.
         if event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS:
