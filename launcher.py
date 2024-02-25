@@ -1,12 +1,13 @@
+#!/usr/bin/python
 import gi
 import os
 import subprocess
 from configparser import RawConfigParser, NoSectionError
 import json
-
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
+# BROKEN UPDATE LOGIC. FIX ASAP 
 
 def get_usage_file_path():
     app_name = "i3QuickLaunch"  # Example application name
@@ -50,13 +51,31 @@ def update_usage_count(program_name):
     # Write the updated usage counts back to the file
     with open(usage_file_path, 'w') as file:
         json.dump(usage_counts, file, indent=4)
+        
+def check_for_updates(package_name):
+    if not package_name:  # Check if package_name is None or empty
+        return False  # No update information available
+    
+    try:
+        result = subprocess.check_output("checkupdates", shell=True, universal_newlines=True)
+        updates = result.split('\n')
+        for update in updates:
+            if package_name in update:
+                return True  # Update is available for this package
+        return False  # No updates found for this package
+    except subprocess.CalledProcessError as e:
+        print(f"Error checking updates for {package_name}: {e}")
+        return None  # Indicate an error occurred
+
 
 class ProgramRow(Gtk.ListBoxRow):
-    def __init__(self, name, command, usage_count=0):
+    def __init__(self, name, command, usage_count=0, install_path=None, package_name=None):
         super().__init__()
         self.name = name
         self.command = command
         self.usage_count = usage_count
+        self.install_path = install_path
+        self.package_name = package_name
         self.box_outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.add(self.box_outer)
         self.label = Gtk.Label(label=name, xalign=0)
@@ -66,6 +85,16 @@ class ProgramRow(Gtk.ListBoxRow):
         self.box_outer.pack_start(self.details, True, True, 0)
 
     def show_details(self, show):
+        if show:
+            has_update = check_for_updates(self.package_name)
+            if has_update is None:
+                update_text = "No Data"  # Could not check for updates
+            else:
+                update_text = "Update available" if has_update else "Up to date"
+
+                
+            update_text = "Update available" if has_update else "Up to date"
+            self.details.set_text(f"Usage Count: {self.usage_count}\nInstall Path: {self.install_path}\n{update_text}")
         self.details.set_visible(show)
 
     def launch_program(self):
@@ -121,8 +150,10 @@ class LauncherWindow(Gtk.Window):
                 exec_cmd = config.get('Desktop Entry', 'Exec').split()[0]
                 exec_cmd = exec_cmd.partition('%')[0].strip()
                 usage_count = program_usage.get(name, 0)  # Use 0 as default if not found
+                install_path = os.path.join(desktop_files_dir, item)
+                package_name = name.lower().replace(" ", "-")  # This is a placeholder and may not be accurate
                 # Append all programs but later add conditionally to the listbox based on usage_count
-                programs.append((name, exec_cmd, usage_count))
+                programs.append((name, exec_cmd, usage_count, install_path, package_name))
             except NoSectionError:
                 continue
 
@@ -130,9 +161,9 @@ class LauncherWindow(Gtk.Window):
         programs.sort(key=lambda x: (-x[2], x[0]))
 
     # Populate the listbox with sorted programs, adding only if usage_count > 0
-        for name, exec_cmd, usage_count in programs:
-            if usage_count > 0:  # Add condition here
-                program_row = ProgramRow(name, exec_cmd, usage_count)
+        for name, exec_cmd, usage_count, install_path, derived_package_name in programs:
+            if usage_count > 0:
+                program_row = ProgramRow(name, exec_cmd, usage_count, install_path=install_path, package_name=derived_package_name)
                 self.listbox.add(program_row)
     
         self.listbox.show_all()
