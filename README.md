@@ -6,7 +6,6 @@ This custom program launcher, tailored for Arch Linux users and seamlessly integ
 
 - **Program Launching**: Instantly search for and launch applications installed on your Arch Linux system with support for double-click or Enter key activations.
 - **Memory Usage Monitoring**: Access real-time memory usage data for running programs directly within the launcher interface.
-- **Program Location & Update Checks**: Identify where applications are installed on your system and check for available updates effortlessly.
 - **Search Functionality**: Utilize the dynamic search bar to swiftly filter through your applications as you type.
 - **Expandable Program Details**: Click on a program to unveil additional details, such as memory usage, installation path, and update availability.
 - **Favorites Priority**: Frequently used applications are prioritized and listed at the top, making them easily accessible for a faster workflow.
