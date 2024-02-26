@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file. The format 
 ## [Unreleased]
 
 ### Added
+- Logic to retrieve and display memory usage for running applications, enhancing the launcher's functionality with real-time system resource monitoring.
+- A progress bar UI component for each application in the launcher to visually represent its memory usage.
 - Initial creation of the launcher script with basic functionality to list and launch applications.
 - Dynamic search functionality to filter through the listed applications based on user input.
 - Implementation of `ProgramRow` class to encapsulate each program's display and actions within the launcher.
@@ -15,11 +17,14 @@ All notable changes to this project will be documented in this file. The format 
 - Dynamic resolution of `usage.json` file path using the XDG Base Directory Specification to enhance compatibility and predictability of user data storage.
 
 ### Changed
+- Improved the accuracy of matching running processes to applications listed in the launcher for more reliable memory usage tracking.
+- Updated UI behavior to dynamically display memory usage details only when an application is highlighted, maintaining a clean interface.
 - Refined the program listing process to only show "favorite" programs initially, with the capability to dynamically update the list based on search input.
 - Enhanced the user interface and interaction feedback, such as highlighting and detail visibility, to be more responsive and intuitive.
 - Adjusted `usage.json` storage logic to comply with XDG standards, ensuring user data is stored in a standardized and expected location across different Linux environments.
 
 ### Fixed
+- Resolved visibility issues with the memory usage progress bar, ensuring it's only displayed alongside relevant application details upon user interaction.
 - Resolved issues where program details were incorrectly shown or hidden due to event handling conflicts.
 - Addressed a bug where the launcher would not correctly differentiate between keyboard and mouse actions, leading to unintended program launches.
 - Fixed an error related to variable scope in the `on_search_changed` method, ensuring the launcher dynamically updates the program list without crashing.
