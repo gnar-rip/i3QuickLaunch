@@ -10,9 +10,11 @@ from gi.repository import Gdk
 import psutil
 
 # checkupdates is broken. Find another way to check for package updates without sacrifiing security. 
+# progress bar is also broken. lag at app startup is scanning memory procces'. create new logic to only check memory when application is highlighted.
+# progress display is broken since getting memory information half working.
 
 def get_usage_file_path():
-    app_name = "i3QuickLaunch"  # Example application name
+    app_name = "i3QuickLaunch"
     default_data_home = os.path.join(os.path.expanduser("~"), ".local", "share")
     data_home = os.getenv("XDG_DATA_HOME", default_data_home)
 
@@ -27,25 +29,24 @@ def load_or_initialize_usage_data():
     usage_file_path = get_usage_file_path()
     
     if not os.path.exists(usage_file_path):
-        return {}  # Initialize to an empty dict if the file doesn't exist
+        return {}
 
     with open(usage_file_path, 'r') as file:
         return json.load(file)
 
-# Example usage within your launcher application
 usage_data = load_or_initialize_usage_data()
 
 def load_usage_counts():
-    usage_file_path = get_usage_file_path()  # Call the function to get the path
+    usage_file_path = get_usage_file_path()
     if not os.path.exists(usage_file_path):
-        return {}  # Initialize to an empty dict if the file doesn't exist
+        return {}
     
     with open(usage_file_path, 'r') as file:
         return json.load(file)
 
 def update_usage_count(program_name):
-    usage_file_path = get_usage_file_path()  # Dynamically get the file path
-    usage_counts = load_usage_counts()  # Load the current usage counts
+    usage_file_path = get_usage_file_path()
+    usage_counts = load_usage_counts()
     
     # Update the usage count for the specified program
     usage_counts[program_name] = usage_counts.get(program_name, 0) + 1
@@ -55,7 +56,7 @@ def update_usage_count(program_name):
         json.dump(usage_counts, file, indent=4)
         
 def check_for_updates(package_name):
-    if not package_name:  # Check if package_name is None or empty
+    if not package_name:
         return False  # No update information available
     
     try:
@@ -87,7 +88,7 @@ class ProgramRow(Gtk.ListBoxRow):
         # Initialize the memory usage progress bar
         self.memory_usage_bar = Gtk.ProgressBar()
         self.memory_usage_bar.set_visible(False)
-        self.memory_usage_bar.set_show_text(True)  # Optionally show the percentage on the progress bar
+        self.memory_usage_bar.set_show_text(True)  # percentage for testing, remove eventually
         self.box_outer.pack_start(self.memory_usage_bar, expand=True, fill=True, padding=0)
         
         self.details = Gtk.Label(label=f"Details for {name}", xalign=0)
@@ -106,7 +107,7 @@ class ProgramRow(Gtk.ListBoxRow):
         if show:
             has_update = check_for_updates(self.package_name)
             if has_update is None:
-                update_text = "No Data"  # Could not check for updates
+                update_text = "No Data"  # no update/couldnt check for update
             else:
                 update_text = "Update available" if has_update else "Up to date"
  
@@ -177,22 +178,22 @@ class LauncherWindow(Gtk.Window):
                 continue
         # Separate top 5 programs based on usage
         top_programs = sorted(programs, key=lambda x: (-x[2], x[0]))[:5]
-    # Sort the rest alphabetically, excluding the top 5
+        # Sort the rest alphabetically, excluding the top 5
         other_programs = sorted([p for p in programs if p not in top_programs], key=lambda x: x[0])
 
-    # Clear the listbox before populating
+        # Clear the listbox before populating
         self.listbox.foreach(lambda widget: self.listbox.remove(widget))
 
-    # Add top programs
+        #Add top programs
         for program in top_programs:
             program_row = ProgramRow(*program)
             self.listbox.add(program_row)
 
-    # Add a divider
+        # Add a divider
         divider = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         self.listbox.add(divider)
 
-    # Add the rest of the programs
+        # Add the rest of the programs
         for program in other_programs:
             program_row = ProgramRow(*program)
             self.listbox.add(program_row)
@@ -246,8 +247,7 @@ class LauncherWindow(Gtk.Window):
         self.hide_all_details()
         
     def on_listbox_click(self, widget, event):
-        self.last_action_type = 'mouse'
-    # GDK_2BUTTON_PRESS is the constant for a double-click event.
+        self.last_action_type = 'mouse'    
         if event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS:
             row = self.listbox.get_selected_row()
             if row:
