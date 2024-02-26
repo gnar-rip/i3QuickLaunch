@@ -69,7 +69,6 @@ def check_for_updates(package_name):
         print(f"Error checking updates for {package_name}: {e}")
         return None  # Indicate an error occurred
 
-
 class ProgramRow(Gtk.ListBoxRow):
     def __init__(self, name, command, usage_count=0, install_path=None, package_name=None):
         super().__init__()
@@ -78,14 +77,31 @@ class ProgramRow(Gtk.ListBoxRow):
         self.usage_count = usage_count
         self.install_path = install_path
         self.package_name = package_name
+        self.has_memory_data = False 
+        
         self.box_outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.add(self.box_outer)
         self.label = Gtk.Label(label=name, xalign=0)
         self.box_outer.pack_start(self.label, True, True, 0)
+        
+        # Initialize the memory usage progress bar
+        self.memory_usage_bar = Gtk.ProgressBar()
+        self.memory_usage_bar.set_visible(False)
+        self.memory_usage_bar.set_show_text(True)  # Optionally show the percentage on the progress bar
+        self.box_outer.pack_start(self.memory_usage_bar, expand=True, fill=True, padding=0)
+        
         self.details = Gtk.Label(label=f"Details for {name}", xalign=0)
         self.details.set_visible(False)
         self.box_outer.pack_start(self.details, True, True, 0)
-
+        
+    def set_memory_usage(self, memory_usage):
+        # Assuming memory_usage is a float from 0.0 to 1.0
+        self.memory_usage_bar.set_fraction(memory_usage)
+        # Update text, optionally
+        self.memory_usage_bar.set_text(f"{memory_usage*100:.0f}%")
+        self.has_memory_data = True
+        self.memory_usage_bar.set_visible(False)
+    
     def show_details(self, show):
         if show:
             has_update = check_for_updates(self.package_name)
@@ -93,11 +109,11 @@ class ProgramRow(Gtk.ListBoxRow):
                 update_text = "No Data"  # Could not check for updates
             else:
                 update_text = "Update available" if has_update else "Up to date"
-
-                
+ 
             update_text = "Update available" if has_update else "Up to date"
             self.details.set_text(f"Usage Count: {self.usage_count}\nInstall Path: {self.install_path}\n{update_text}")
         self.details.set_visible(show)
+        self.memory_usage_bar.set_visible(show and self.has_memory_data)
 
     def launch_program(self):
         update_usage_count(self.name)
@@ -124,6 +140,7 @@ class LauncherWindow(Gtk.Window):
         self.listbox = Gtk.ListBox()
         self.listbox.set_selection_mode(Gtk.SelectionMode.BROWSE)
         scrolled_window.add(self.listbox)
+        self.connect("show", self.on_show_window)
         self.listbox.connect("row-selected", self.on_row_selected)
         self.populate_programs()
 
@@ -192,6 +209,9 @@ class LauncherWindow(Gtk.Window):
         self.hide_all_details()
         if row is not None:
             row.show_details(True)
+            app_name = row.name
+            memory_usage = self.get_memory_usage_for_application(app_name)
+            row.set_memory_usage(memory_usage)
 
     def on_search_changed(self, entry):
         search_text = entry.get_text().lower()
@@ -244,6 +264,40 @@ class LauncherWindow(Gtk.Window):
         if event.keyval == Gdk.KEY_Return:  # Check if the "Enter" key was pressed
             self.last_action_type = 'keyboard'
 
+    def on_show_window(self, *args):
+        self.update_memory_usage_for_all_rows()
+        
+    def update_memory_usage_for_row(self, row):
+        if isinstance(row, ProgramRow):
+            memory_usage = self.get_memory_usage_for_application(row.name)
+            row.set_memory_usage(memory_usage)
+            
+    def get_memory_usage_for_application(self, app_name):
+        total_memory_usage = 0.0
+        for proc in psutil.process_iter(attrs=['name', 'memory_percent']):
+            try:
+                # Simplify app_name and process name to improve matching accuracy
+                proc_name = proc.info['name'].lower()
+                simplified_app_name = app_name.lower().replace(" ", "")
+                simplified_proc_name = proc_name.replace(" ", "")
+        
+                if simplified_app_name in simplified_proc_name:
+                    # Debugging output to verify matching and memory usage
+                    print(f"Matching process: {proc.info['name']} with memory usage: {proc.info['memory_percent']}%")
+                    total_memory_usage += proc.info['memory_percent']
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+        memory_usage_fraction = total_memory_usage / 100.0  # Convert percentage to a fraction
+        # Debugging output to verify total memory usage calculation
+        print(f"Total memory usage for {app_name}: {memory_usage_fraction*100:.2f}%")
+        return memory_usage_fraction
+
+    
+    def update_memory_usage_for_all_rows(self):
+        for row in self.listbox.get_children():
+            if isinstance(row, ProgramRow):
+                memory_usage = self.get_memory_usage_for_application(row.name)
+                row.set_memory_usage(memory_usage)
 
 def main():
     win = LauncherWindow()
