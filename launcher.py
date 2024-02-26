@@ -7,7 +7,9 @@ import json
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
-# BROKEN UPDATE LOGIC. FIX ASAP 
+import psutil
+
+# checkupdates is broken. Find another way to check for package updates without sacrifiing security. 
 
 def get_usage_file_path():
     app_name = "i3QuickLaunch"  # Example application name
@@ -140,7 +142,7 @@ class LauncherWindow(Gtk.Window):
         program_usage = load_usage_counts()  # Load the usage counts
 
         programs = []
-
+        # Load all programs
         for item in os.listdir(desktop_files_dir):
             if item.endswith('.desktop'):
                 config = RawConfigParser()
@@ -156,21 +158,35 @@ class LauncherWindow(Gtk.Window):
                 programs.append((name, exec_cmd, usage_count, install_path, package_name))
             except NoSectionError:
                 continue
+        # Separate top 5 programs based on usage
+        top_programs = sorted(programs, key=lambda x: (-x[2], x[0]))[:5]
+    # Sort the rest alphabetically, excluding the top 5
+        other_programs = sorted([p for p in programs if p not in top_programs], key=lambda x: x[0])
 
-    # Sort programs by usage count in descending order, then by name
-        programs.sort(key=lambda x: (-x[2], x[0]))
+    # Clear the listbox before populating
+        self.listbox.foreach(lambda widget: self.listbox.remove(widget))
 
-    # Populate the listbox with sorted programs, adding only if usage_count > 0
-        for name, exec_cmd, usage_count, install_path, derived_package_name in programs:
-            if usage_count > 0:
-                program_row = ProgramRow(name, exec_cmd, usage_count, install_path=install_path, package_name=derived_package_name)
-                self.listbox.add(program_row)
-    
+    # Add top programs
+        for program in top_programs:
+            program_row = ProgramRow(*program)
+            self.listbox.add(program_row)
+
+    # Add a divider
+        divider = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        self.listbox.add(divider)
+
+    # Add the rest of the programs
+        for program in other_programs:
+            program_row = ProgramRow(*program)
+            self.listbox.add(program_row)
+
         self.listbox.show_all()
+        self.hide_all_details()
 
     def hide_all_details(self):
-        for row in self.listbox.get_children():
-            row.show_details(False)
+        for child in self.listbox.get_children():
+            if isinstance(child, ProgramRow):
+                child.show_details(False)
 
     def on_row_selected(self, listbox, row):
         self.hide_all_details()
