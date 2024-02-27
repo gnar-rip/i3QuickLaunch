@@ -1,17 +1,12 @@
 #!/usr/bin/python
 import gi
+import json
 import os
 import subprocess
 from configparser import RawConfigParser, NoSectionError
-import json
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
-from gi.repository import Gdk
 import psutil
-
-# checkupdates is broken. Find another way to check for package updates without sacrifiing security. 
-# progress bar is also broken. lag at app startup is scanning memory procces'. create new logic to only check memory when application is highlighted.
-# progress display is broken since getting memory information half working.
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk, GdkPixbuf
 
 def get_usage_file_path():
     app_name = "i3QuickLaunch"
@@ -68,10 +63,10 @@ def check_for_updates(package_name):
         return False  # No updates found for this package
     except subprocess.CalledProcessError as e:
         print(f"Error checking updates for {package_name}: {e}")
-        return None  # Indicate an error occurred
+        return None  # Indicate an error occurreds
 
 class ProgramRow(Gtk.ListBoxRow):
-    def __init__(self, name, command, usage_count=0, install_path=None, package_name=None):
+    def __init__(self, name, command, usage_count=0, install_path=None, package_name=None, icon=None):
         super().__init__()
         self.name = name
         self.command = command
@@ -82,7 +77,19 @@ class ProgramRow(Gtk.ListBoxRow):
         
         self.box_outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.add(self.box_outer)
+        
+        # Create a horizontal box to contain the icon and the label
+        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.box_outer.pack_start(hbox, True, True, 0)
+        
+        # Load and set the icon
+        self.icon_image = Gtk.Image()
+        self.set_icon(icon)
+        hbox.pack_start(self.icon_image, False, False, 0)
+        
+        # Create and pack the label into the hbox
         self.label = Gtk.Label(label=name, xalign=0)
+        hbox.pack_start(self.label, True, True, 0)
         self.box_outer.pack_start(self.label, True, True, 0)
         
         # Initialize the memory usage progress bar
@@ -94,6 +101,16 @@ class ProgramRow(Gtk.ListBoxRow):
         self.details = Gtk.Label(label=f"Details for {name}", xalign=0)
         self.details.set_visible(False)
         self.box_outer.pack_start(self.details, True, True, 0)
+        
+    def set_icon(self, icon_name):
+        if icon_name:
+            icon_theme = Gtk.IconTheme.get_default()
+            try:
+                pixbuf = icon_theme.load_icon(icon_name, 18, 0)  # 48 is the size, adjust as needed
+                self.icon_image.set_from_pixbuf(pixbuf)
+            except Exception as e:
+                print(f"Failed to load icon {icon_name}: {e}")
+                # Handle missing icon (optional)
         
     def set_memory_usage(self, memory_usage):
         # Assuming memory_usage is a float from 0.0 to 1.0
@@ -172,8 +189,9 @@ class LauncherWindow(Gtk.Window):
                 usage_count = program_usage.get(name, 0)  # Use 0 as default if not found
                 install_path = os.path.join(desktop_files_dir, item)
                 package_name = name.lower().replace(" ", "-")  # This is a placeholder and may not be accurate
+                icon = config.get('Desktop Entry', 'Icon', fallback=None)  # Fetch icon for each program
                 # Append all programs but later add conditionally to the listbox based on usage_count
-                programs.append((name, exec_cmd, usage_count, install_path, package_name))
+                programs.append((name, exec_cmd, usage_count, install_path, package_name, icon))
             except NoSectionError:
                 continue
         # Separate top 5 programs based on usage
