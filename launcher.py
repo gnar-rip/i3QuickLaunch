@@ -6,7 +6,7 @@ import subprocess
 from configparser import RawConfigParser, NoSectionError
 import psutil
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GdkPixbuf
+from gi.repository import Gtk, Gdk, GdkPixbuf, Gio
 
 def get_usage_file_path():
     app_name = "i3QuickLaunch"
@@ -90,12 +90,12 @@ class ProgramRow(Gtk.ListBoxRow):
         # Create and pack the label into the hbox
         self.label = Gtk.Label(label=name, xalign=0)
         hbox.pack_start(self.label, True, True, 0)
-        self.box_outer.pack_start(self.label, True, True, 0)
+        #self.box_outer.pack_start(self.label, True, True, 0)
         
         # Initialize the memory usage progress bar
         self.memory_usage_bar = Gtk.ProgressBar()
         self.memory_usage_bar.set_visible(False)
-        self.memory_usage_bar.set_show_text(True)  # percentage for testing, remove eventually
+        self.memory_usage_bar.set_show_text(False)  # percentage for testing, remove eventually
         self.box_outer.pack_start(self.memory_usage_bar, expand=True, fill=True, padding=0)
         
         self.details = Gtk.Label(label=f"Details for {name}", xalign=0)
@@ -106,8 +106,9 @@ class ProgramRow(Gtk.ListBoxRow):
         if icon_name:
             icon_theme = Gtk.IconTheme.get_default()
             try:
-                pixbuf = icon_theme.load_icon(icon_name, 18, 0)  # 48 is the size, adjust as needed
-                self.icon_image.set_from_pixbuf(pixbuf)
+                pixbuf = icon_theme.load_icon(icon_name, 18, 0)
+                scaled_pixbuf = pixbuf.scale_simple(18, 18, GdkPixbuf.InterpType.BILINEAR)
+                self.icon_image.set_from_pixbuf(scaled_pixbuf)
             except Exception as e:
                 print(f"Failed to load icon {icon_name}: {e}")
                 # Handle missing icon (optional)
@@ -115,8 +116,6 @@ class ProgramRow(Gtk.ListBoxRow):
     def set_memory_usage(self, memory_usage):
         # Assuming memory_usage is a float from 0.0 to 1.0
         self.memory_usage_bar.set_fraction(memory_usage)
-        # Update text, optionally
-        self.memory_usage_bar.set_text(f"{memory_usage*100:.0f}%")
         self.has_memory_data = True
         self.memory_usage_bar.set_visible(False)
     
@@ -161,6 +160,7 @@ class LauncherWindow(Gtk.Window):
         self.connect("show", self.on_show_window)
         self.listbox.connect("row-selected", self.on_row_selected)
         self.populate_programs()
+        self.apply_theme()  # Apply the theme at the initialization
 
         # Connect to the 'realize' signal to hide details after the window is fully initialized
         self.connect("realize", lambda _: self.hide_all_details())
@@ -170,7 +170,6 @@ class LauncherWindow(Gtk.Window):
         
         # Allow "enter" to launch programs. Fixed double click override.
         self.listbox.connect("row-activated", self.on_row_activated)
-
 
     def populate_programs(self):
         desktop_files_dir = '/usr/share/applications'
@@ -261,6 +260,7 @@ class LauncherWindow(Gtk.Window):
                     continue
 
         self.listbox.show_all()
+        # self.filter_programs(search_text)
         # Explicitly call hide_all_details to ensure all program details are hidden after repopulation
         self.hide_all_details()
         
@@ -309,8 +309,15 @@ class LauncherWindow(Gtk.Window):
         # Debugging output to verify total memory usage calculation
         print(f"Total memory usage for {app_name}: {memory_usage_fraction*100:.2f}%")
         return memory_usage_fraction
-
     
+    def apply_theme(self):
+        css_theme_path = os.path.join(os.path.dirname(__file__), 'themes', 'default.css')
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_path(css_theme_path)
+        screen = Gdk.Screen.get_default()
+        Gtk.StyleContext.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+        
     def update_memory_usage_for_all_rows(self):
         for row in self.listbox.get_children():
             if isinstance(row, ProgramRow):
