@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='i3QuickLaunch',
-    version='0.1.0',
+    version='0.2.0',
     packages=find_packages(),
     scripts=['launcher.py'],
     entry_points={
@@ -13,6 +13,7 @@ setup(
     install_requires=[
         # List dependencies here. For example:
         'PyGObject',
+        'psutil',
     ],
     author='gnar Rip',
     author_email='gnar.rip@proton.me',
