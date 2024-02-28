@@ -8,24 +8,22 @@ import psutil
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GdkPixbuf, Gio
 
+def get_theme_files(directory):
+        path = os.path.join(os.path.dirname(__file__), directory)
+        return [f for f in os.listdir(path) if f.endswith('.css')]
+
 def get_usage_file_path():
     app_name = "i3QuickLaunch"
     default_data_home = os.path.join(os.path.expanduser("~"), ".local", "share")
     data_home = os.getenv("XDG_DATA_HOME", default_data_home)
-
     usage_file_path = os.path.join(data_home, app_name, "usage.json")
-
-    # Ensure the directory exists
     os.makedirs(os.path.dirname(usage_file_path), exist_ok=True)
-    
     return usage_file_path
 
 def load_or_initialize_usage_data():
     usage_file_path = get_usage_file_path()
-    
     if not os.path.exists(usage_file_path):
         return {}
-
     with open(usage_file_path, 'r') as file:
         return json.load(file)
 
@@ -35,25 +33,19 @@ def load_usage_counts():
     usage_file_path = get_usage_file_path()
     if not os.path.exists(usage_file_path):
         return {}
-    
     with open(usage_file_path, 'r') as file:
         return json.load(file)
 
 def update_usage_count(program_name):
     usage_file_path = get_usage_file_path()
     usage_counts = load_usage_counts()
-    
-    # Update the usage count for the specified program
     usage_counts[program_name] = usage_counts.get(program_name, 0) + 1
-    
-    # Write the updated usage counts back to the file
     with open(usage_file_path, 'w') as file:
         json.dump(usage_counts, file, indent=4)
         
 def check_for_updates(package_name):
     if not package_name:
         return False  # No update information available
-    
     try:
         result = subprocess.check_output("checkupdates", shell=True, universal_newlines=True)
         updates = result.split('\n')
@@ -126,7 +118,6 @@ class ProgramRow(Gtk.ListBoxRow):
                 update_text = "No Data"  # no update/couldnt check for update
             else:
                 update_text = "Update available" if has_update else "Up to date"
- 
             update_text = "Update available" if has_update else "Up to date"
             self.details.set_text(f"Usage Count: {self.usage_count}\nInstall Path: {self.install_path}\n{update_text}")
         self.details.set_visible(show)
@@ -143,14 +134,19 @@ class LauncherWindow(Gtk.Window):
         self.last_action_type = None
         self.connect("key-press-event", self.on_key_press)
         self.set_border_width(10)
-        self.set_default_size(400, 600)
+        self.set_default_size(400, 400)
         self.usage_counts = load_usage_counts()
+        #Vertical Box
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.add(vbox)
+        # Horizont Search + Theme Button
+        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        vbox.pack_start(hbox, False, False, 0)
         self.search_entry = Gtk.Entry()
         self.search_entry.set_placeholder_text("Search programs...")
         self.search_entry.connect("changed", self.on_search_changed)
-        vbox.pack_start(self.search_entry, False, False, 0)
+        self.search_entry.set_size_request(350, -1)
+        hbox.pack_start(self.search_entry, False, False, 0)
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         vbox.pack_start(scrolled_window, True, True, 0)
@@ -160,8 +156,16 @@ class LauncherWindow(Gtk.Window):
         self.connect("show", self.on_show_window)
         self.listbox.connect("row-selected", self.on_row_selected)
         self.populate_programs()
-        self.apply_theme()  # Apply the theme at the initialization
-
+        # Theme dropdown
+        self.theme_dropdown = Gtk.MenuButton.new()
+        theme_menu = Gtk.Menu()
+        self.populate_theme_selector(theme_menu)
+        self.theme_dropdown.set_popover(theme_menu)
+        hbox.pack_start(self.theme_dropdown, False, False, 0)
+        print("Connecting clicked signal...")
+        self.theme_dropdown.connect("clicked", self.on_theme_changed)
+        self.apply_theme('default.css')  # Apply the theme at the initialization
+       
         # Connect to the 'realize' signal to hide details after the window is fully initialized
         self.connect("realize", lambda _: self.hide_all_details())
         
@@ -171,6 +175,26 @@ class LauncherWindow(Gtk.Window):
         # Allow "enter" to launch programs. Fixed double click override.
         self.listbox.connect("row-activated", self.on_row_activated)
 
+    def populate_theme_selector(self, theme_menu):
+        print("Populating theme selector...")
+        theme_files = get_theme_files('themes')
+        for theme_file in theme_files:
+            menu_item = Gtk.MenuItem.new_with_label(theme_file[:-4])  # Remove .css extension and create a menu item
+            theme_menu.append(menu_item)  # Add the menu item to the passed menu
+            menu_item.connect("activate", self.on_theme_selected, theme_file)  # Connect a signal
+        theme_menu.show_all()  # Show all menu items
+            
+    def on_theme_changed(self, button):
+        print('Theme button clicked')
+        menu = button.get_menu_model()
+        active_item = menu.get_active_item()
+        if active_item:
+            theme_name = active_item.get_label()
+            self.apply_theme(theme_name + '.css')
+            
+    def on_theme_selected(self, menu_item, theme_file):
+        self.apply_theme(theme_file)
+ 
     def populate_programs(self):
         desktop_files_dir = '/usr/share/applications'
         program_usage = load_usage_counts()  # Load the usage counts
@@ -238,7 +262,6 @@ class LauncherWindow(Gtk.Window):
 
         desktop_files_dir = '/usr/share/applications'  # Ensure this is defined outside the loop
         program_usage = load_usage_counts()
-
         if search_text == "":
         # If the search field is cleared, repopulate with favorites
             self.populate_programs()
@@ -254,7 +277,8 @@ class LauncherWindow(Gtk.Window):
                         exec_cmd = config.get('Desktop Entry', 'Exec').split()[0]
                         exec_cmd = exec_cmd.partition('%')[0].strip()
                         usage_count = program_usage.get(name, 0)
-                        program_row = ProgramRow(name, exec_cmd, usage_count)
+                        icon = config.get('Desktop Entry', 'Icon', fallback=None)
+                        program_row = ProgramRow(name, exec_cmd, usage_count, icon=icon)
                         self.listbox.add(program_row)
                 except NoSectionError:
                     continue
@@ -310,14 +334,12 @@ class LauncherWindow(Gtk.Window):
         print(f"Total memory usage for {app_name}: {memory_usage_fraction*100:.2f}%")
         return memory_usage_fraction
     
-    def apply_theme(self):
-        css_theme_path = os.path.join(os.path.dirname(__file__), 'themes', 'default.css')
+    def apply_theme(self, theme_file):
+        css_theme_path = os.path.join(os.path.dirname(__file__), 'themes', theme_file)
         css_provider = Gtk.CssProvider()
         css_provider.load_from_path(css_theme_path)
-        screen = Gdk.Screen.get_default()
-        Gtk.StyleContext.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-
-        
+        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+     
     def update_memory_usage_for_all_rows(self):
         for row in self.listbox.get_children():
             if isinstance(row, ProgramRow):
