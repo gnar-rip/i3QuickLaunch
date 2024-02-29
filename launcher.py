@@ -155,10 +155,11 @@ class LauncherWindow(Gtk.Window):
         self.listbox.connect("row-selected", self.on_row_selected)
         self.populate_programs()
         # Theme dropdown - Broken. Fix asap
-        self.theme_dropdown = Gtk.MenuButton.new()
+        theme_popover = Gtk.Popover()
         theme_menu = Gtk.Menu()
+        self.theme_dropdown = Gtk.MenuButton.new()
         self.populate_theme_selector(theme_menu)
-        self.theme_dropdown.set_popover(theme_menu)
+        self.theme_dropdown.set_popover(theme_popover)
         hbox.pack_start(self.theme_dropdown, False, False, 0)
         print("Connecting clicked signal...")
         self.theme_dropdown.connect("clicked", self.on_theme_changed)
@@ -184,11 +185,20 @@ class LauncherWindow(Gtk.Window):
             
     def on_theme_changed(self, button):
         print('Theme button clicked')
-        menu = button.get_menu_model()
-        active_item = menu.get_active_item()
-        if active_item:
-            theme_name = active_item.get_label()
-            self.apply_theme(theme_name + '.css')
+        popover = button.get_popover()  # Get the popover associated with the button
+        if popover:
+            menu = popover.get_child()  # Get the menu model from the popover
+        if menu:
+            for menu_item in menu.get_children():
+                if menu_item.get_active():
+                    theme_name = menu_item.get_label()
+                    self.apply_theme(theme_name + '.css')
+                    break
+            else:
+                print("No menu found in the popover")
+        else:
+            print("No popover associated with the button")
+
             
     def on_theme_selected(self, menu_item, theme_file):
         self.apply_theme(theme_file)
