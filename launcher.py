@@ -87,7 +87,6 @@ class ProgramRow(Gtk.ListBoxRow):
         # Initialize the memory usage progress bar
         self.memory_usage_bar = Gtk.ProgressBar()
         self.memory_usage_bar.set_visible(False)
-        self.memory_usage_bar.set_show_text(False)  # percentage for testing, remove eventually
         self.box_outer.pack_start(self.memory_usage_bar, expand=True, fill=True, padding=0)
         
         self.details = Gtk.Label(label=f"Details for {name}", xalign=0)
@@ -106,10 +105,9 @@ class ProgramRow(Gtk.ListBoxRow):
                 # Handle missing icon (optional)
         
     def set_memory_usage(self, memory_usage):
-        # Assuming memory_usage is a float from 0.0 to 1.0
         self.memory_usage_bar.set_fraction(memory_usage)
-        self.has_memory_data = True
-        self.memory_usage_bar.set_visible(False)
+        #self.has_memory_data = True
+        self.memory_usage_bar.set_visible(True)
     
     def show_details(self, show):
         if show:
@@ -136,7 +134,7 @@ class LauncherWindow(Gtk.Window):
         self.set_border_width(10)
         self.set_default_size(400, 400)
         self.usage_counts = load_usage_counts()
-        #Vertical Box
+        # Vertical Box
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.add(vbox)
         # Horizont Search + Theme Button
@@ -145,7 +143,7 @@ class LauncherWindow(Gtk.Window):
         self.search_entry = Gtk.Entry()
         self.search_entry.set_placeholder_text("Search programs...")
         self.search_entry.connect("changed", self.on_search_changed)
-        self.search_entry.set_size_request(350, -1)
+        self.search_entry.set_size_request(375, -1)
         hbox.pack_start(self.search_entry, False, False, 0)
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -156,7 +154,7 @@ class LauncherWindow(Gtk.Window):
         self.connect("show", self.on_show_window)
         self.listbox.connect("row-selected", self.on_row_selected)
         self.populate_programs()
-        # Theme dropdown
+        # Theme dropdown - Broken. Fix asap
         self.theme_dropdown = Gtk.MenuButton.new()
         theme_menu = Gtk.Menu()
         self.populate_theme_selector(theme_menu)
@@ -164,7 +162,7 @@ class LauncherWindow(Gtk.Window):
         hbox.pack_start(self.theme_dropdown, False, False, 0)
         print("Connecting clicked signal...")
         self.theme_dropdown.connect("clicked", self.on_theme_changed)
-        self.apply_theme('default.css')  # Apply the theme at the initialization
+        self.apply_theme('default.css')
        
         # Connect to the 'realize' signal to hide details after the window is fully initialized
         self.connect("realize", lambda _: self.hide_all_details())
@@ -179,7 +177,7 @@ class LauncherWindow(Gtk.Window):
         print("Populating theme selector...")
         theme_files = get_theme_files('themes')
         for theme_file in theme_files:
-            menu_item = Gtk.MenuItem.new_with_label(theme_file[:-4])  # Remove .css extension and create a menu item
+            menu_item = Gtk.MenuItem.new_with_label(theme_file[:-4])  # plain text file name without .css
             theme_menu.append(menu_item)  # Add the menu item to the passed menu
             menu_item.connect("activate", self.on_theme_selected, theme_file)  # Connect a signal
         theme_menu.show_all()  # Show all menu items
@@ -213,7 +211,6 @@ class LauncherWindow(Gtk.Window):
                 install_path = os.path.join(desktop_files_dir, item)
                 package_name = name.lower().replace(" ", "-")  # This is a placeholder and may not be accurate
                 icon = config.get('Desktop Entry', 'Icon', fallback=None)  # Fetch icon for each program
-                # Append all programs but later add conditionally to the listbox based on usage_count
                 programs.append((name, exec_cmd, usage_count, install_path, package_name, icon))
             except NoSectionError:
                 continue
@@ -221,24 +218,19 @@ class LauncherWindow(Gtk.Window):
         top_programs = sorted(programs, key=lambda x: (-x[2], x[0]))[:5]
         # Sort the rest alphabetically, excluding the top 5
         other_programs = sorted([p for p in programs if p not in top_programs], key=lambda x: x[0])
-
         # Clear the listbox before populating
         self.listbox.foreach(lambda widget: self.listbox.remove(widget))
-
         #Add top programs
         for program in top_programs:
             program_row = ProgramRow(*program)
             self.listbox.add(program_row)
-
         # Add a divider
         divider = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         self.listbox.add(divider)
-
         # Add the rest of the programs
         for program in other_programs:
             program_row = ProgramRow(*program)
             self.listbox.add(program_row)
-
         self.listbox.show_all()
         self.hide_all_details()
 
@@ -307,7 +299,8 @@ class LauncherWindow(Gtk.Window):
             self.last_action_type = 'keyboard'
 
     def on_show_window(self, *args):
-        self.update_memory_usage_for_all_rows()
+        #self.update_memory_usage_for_all_rows()
+        pass
         
     def update_memory_usage_for_row(self, row):
         if isinstance(row, ProgramRow):
