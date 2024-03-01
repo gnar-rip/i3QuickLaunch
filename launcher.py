@@ -154,17 +154,21 @@ class LauncherWindow(Gtk.Window):
         self.connect("show", self.on_show_window)
         self.listbox.connect("row-selected", self.on_row_selected)
         self.populate_programs()
+        
         # Theme dropdown - Broken. Fix asap
-        theme_popover = Gtk.Popover()
-        theme_menu = Gtk.Menu()
         self.theme_dropdown = Gtk.MenuButton.new()
-        self.populate_theme_selector(theme_menu)
-        self.theme_dropdown.set_popover(theme_popover)
         hbox.pack_start(self.theme_dropdown, False, False, 0)
-        print("Connecting clicked signal...")
-        self.theme_dropdown.connect("clicked", self.on_theme_changed)
         self.apply_theme('default.css')
-       
+        print("Connecting clicked signal...")
+        self.theme_popover = Gtk.Popover()
+        self.theme_dropdown.set_popover(self.theme_popover)
+        theme_menu = self.populate_theme_selector()
+        if theme_menu.get_parent():  # Check if the menu is already attached to another widget
+            theme_menu.get_parent().remove(theme_menu)  # Remove it from its existing container
+        self.theme_popover.add(theme_menu)  # Add the menu to the popover
+        print("Theme Menu added to popover:", theme_menu)  
+        self.theme_dropdown.connect("clicked", self.on_theme_changed)
+ 
         # Connect to the 'realize' signal to hide details after the window is fully initialized
         self.connect("realize", lambda _: self.hide_all_details())
         
@@ -174,34 +178,64 @@ class LauncherWindow(Gtk.Window):
         # Allow "enter" to launch programs. Fixed double click override.
         self.listbox.connect("row-activated", self.on_row_activated)
 
-    def populate_theme_selector(self, theme_menu):
+    def populate_theme_selector(self):
         print("Populating theme selector...")
+        theme_menu = Gtk.Menu()
         theme_files = get_theme_files('themes')
+        print("Theme Files:", theme_files)
         for theme_file in theme_files:
-            menu_item = Gtk.MenuItem.new_with_label(theme_file[:-4])  # plain text file name without .css
-            theme_menu.append(menu_item)  # Add the menu item to the passed menu
+            menu_label = os.path.splitext(os.path.basename(theme_file))[0]
+            print("Menu Label:", menu_label)
+            menu_item = Gtk.MenuItem.new_with_label(menu_label)
             menu_item.connect("activate", self.on_theme_selected, theme_file)  # Connect a signal
+            theme_menu.append(menu_item)  # Add the menu item to the passed menu
         theme_menu.show_all()  # Show all menu items
+        print("Theme Menu created:", theme_menu)
+        return theme_menu
             
     def on_theme_changed(self, button):
         print('Theme button clicked')
-        popover = button.get_popover()  # Get the popover associated with the button
-        if popover:
-            menu = popover.get_child()  # Get the menu model from the popover
-        if menu:
-            for menu_item in menu.get_children():
-                if menu_item.get_active():
-                    theme_name = menu_item.get_label()
-                    self.apply_theme(theme_name + '.css')
-                    break
-            else:
-                print("No menu found in the popover")
-        else:
+        # Retrieve the popover associated with the button
+        popover = button.get_popover()
+        print("Popover:", popover)
+        if popover is None:
             print("No popover associated with the button")
+            return
+        # Retrieve the menu model from the popover
+        menu = self.theme_popover.get_child()
+        
+        # Find the active menu item and apply the corresponding theme
+        for menu_item in menu.get_children():
+            if menu_item.get_active():
+                theme_name = menu_item.get_label()
+                self.apply_theme(theme_name + '.css')
+                print("Theme applied:", theme_name)
+                return
 
-            
+        if menu is None:
+            print("No menu found in the popover")
+            return
+
+    # Find the active menu item and apply the corresponding theme
+        for menu_item in menu.get_children():
+            if menu_item.get_active():
+                theme_name = menu_item.get_label()
+                self.apply_theme(theme_name + '.css')
+                return
+
+        print("No active menu item found")
+           
     def on_theme_selected(self, menu_item, theme_file):
+        print("Theme Selected:", theme_file)
+        # Apply the selected theme directly
         self.apply_theme(theme_file)
+
+        # Loop through all menu items to deactivate any previously active item
+        for item in menu_item.get_parent().get_children():
+            item.set_active(False)
+        # Set the selected menu item as active
+        menu_item.set_active(True)
+
  
     def populate_programs(self):
         desktop_files_dir = '/usr/share/applications'
