@@ -128,26 +128,32 @@ class ProgramRow(Gtk.ListBoxRow):
 class LauncherWindow(Gtk.Window):
     def __init__(self):
         super().__init__(title="Program Launcher")
-        # Initialize the flag to track the last action type ('keyboard' or 'mouse')
         self.last_action_type = None
         self.connect("key-press-event", self.on_key_press)
         self.set_border_width(10)
         self.set_default_size(400, 400)
         self.usage_counts = load_usage_counts()
+        
         # Vertical Box
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.add(vbox)
-        # Horizont Search + Theme Button
+        
+        # Horizontal Search
         hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         vbox.pack_start(hbox, False, False, 0)
+        
+        #Search Bar
         self.search_entry = Gtk.Entry()
         self.search_entry.set_placeholder_text("Search programs...")
         self.search_entry.connect("changed", self.on_search_changed)
         self.search_entry.set_size_request(375, -1)
         hbox.pack_start(self.search_entry, False, False, 0)
+        
+        #ProgramRow scrollable window
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         vbox.pack_start(scrolled_window, True, True, 0)
+        #Program List
         self.listbox = Gtk.ListBox()
         self.listbox.set_selection_mode(Gtk.SelectionMode.BROWSE)
         scrolled_window.add(self.listbox)
@@ -169,15 +175,15 @@ class LauncherWindow(Gtk.Window):
         print("Theme Menu added to popover:", theme_menu)  
         self.theme_dropdown.connect("clicked", self.on_theme_changed)
  
+        # Doubleclick + Enter Workaround
         # Connect to the 'realize' signal to hide details after the window is fully initialized
         self.connect("realize", lambda _: self.hide_all_details())
-        
         # Connect the list.box click so we can workaround the single click issue
         self.listbox.connect("button-press-event", self.on_listbox_click)
-        
         # Allow "enter" to launch programs. Fixed double click override.
         self.listbox.connect("row-activated", self.on_row_activated)
-
+    
+    # Theme Selector Methods
     def populate_theme_selector(self):
         print("Populating theme selector...")
         theme_menu = Gtk.Menu()
@@ -235,8 +241,14 @@ class LauncherWindow(Gtk.Window):
             item.set_active(False)
         # Set the selected menu item as active
         menu_item.set_active(True)
-
- 
+    
+    def apply_theme(self, theme_file):
+        css_theme_path = os.path.join(os.path.dirname(__file__), 'themes', theme_file)
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_path(css_theme_path)
+        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)    
+    
+    # Populat Program + Listing/Search Logic
     def populate_programs(self):
         desktop_files_dir = '/usr/share/applications'
         program_usage = load_usage_counts()  # Load the usage counts
@@ -345,7 +357,8 @@ class LauncherWindow(Gtk.Window):
     def on_show_window(self, *args):
         #self.update_memory_usage_for_all_rows()
         pass
-        
+      
+    # Memory Usage Logic  
     def update_memory_usage_for_row(self, row):
         if isinstance(row, ProgramRow):
             memory_usage = self.get_memory_usage_for_application(row.name)
@@ -371,12 +384,6 @@ class LauncherWindow(Gtk.Window):
         print(f"Total memory usage for {app_name}: {memory_usage_fraction*100:.2f}%")
         return memory_usage_fraction
     
-    def apply_theme(self, theme_file):
-        css_theme_path = os.path.join(os.path.dirname(__file__), 'themes', theme_file)
-        css_provider = Gtk.CssProvider()
-        css_provider.load_from_path(css_theme_path)
-        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
-     
     def update_memory_usage_for_all_rows(self):
         for row in self.listbox.get_children():
             if isinstance(row, ProgramRow):
