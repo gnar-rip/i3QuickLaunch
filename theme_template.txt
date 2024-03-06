@@ -1,0 +1,66 @@
+/* GTK Theme Template for i3QuickLaunch
+   Customize this template to create your own theme.
+   Change the hexadecimal color codes and other properties to suit your design.
+*/
+
+/* Base window background */
+window {
+    background-color: #1E1E2E; /* Dark blue background, change to your preferred window background color */
+    color: #CDD6F4; /* Light blue text color, change to your preferred text color */
+}
+
+/* Button styles */
+button {
+    background-color: #F5C2E7; /* Light pink background for buttons, change to your preferred button background color */
+    border-radius: 5px; /* Rounded corners for buttons, adjust the radius to your liking */
+    color: #1E1E2E; /* Dark text color for buttons, change to contrast with the button background */
+    padding: 5px 10px; /* Padding inside buttons, adjust to increase/decrease space inside */
+}
+
+button:hover {
+    background-color: #ABE9B3; /* Color change on hover, set to your preferred hover background */
+}
+
+button:active {
+    background-color: #F28BAD; /* Color change on click, set to your preferred active background */
+}
+
+/* Label styles */
+/* Use this section to style GtkLabel elements. Adjust the color property to change text color. */
+label {
+    color: #F5E0DC; /* Soft pink text color for labels, change to your preferred label text color */
+}
+
+/* Entry styles (text inputs) */
+/* Use this section to style GtkEntry elements. Adjust the background-color, border-radius, and padding. */
+entry {
+    background-color: #313244; /* Darker background for input fields, change to your liking */
+    border-radius: 4px; /* Rounded corners for input fields */
+    border: 1px solid #89B4FA; /* Border color and size for input fields */
+    padding: 5px 10px; /* Inner padding for input fields */
+    color: #CDD6F4; /* Text color within input fields */
+}
+
+/* Scrollbar styles */
+/* Adjust scrollbar colors for normal, hover, and active states. */
+scrollbar, scrollbar:hover {
+    background-color: #2E2E3E; /* Scrollbar background, change to match your theme */
+}
+
+scrollbar trough {
+    background-color: #1E1E2E; /* Scrollbar trough color, usually similar or identical to window background */
+}
+
+scrollbar slider, scrollbar slider:hover, scrollbar slider:active {
+    background-color: #89B4FA; /* Slider color, adjust for visibility */
+    border-radius: 10px; /* Rounded corners for the slider */
+}
+
+/* List styles */
+/* Use this section to style GtkListBox or similar elements. */
+list {
+    background-color: #1E1E2E; /* Background color for lists, adjust to match your theme */
+}
+
+/* Add custom styles below */
+/* Example: Customizing a specific widget or adding new styles for specific classes or IDs */
