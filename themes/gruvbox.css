@@ -57,7 +57,7 @@ combobox, combobox * {
     color: #ebdbb2; /* Gruvbox light text */
 }
 
-combobox frame, combobox frame * {
+combobox frame, combobox frame *{
     border: none; /* Remove any border */
     background-color: #3c3836; /* Gruvbox dark gray background */
 }

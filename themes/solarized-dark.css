@@ -57,6 +57,10 @@ combobox {
     color: #839496; /* Solarized Dark base text */
 }
 
+combobox frame, combobox frame * {
+    background-color: #002b36; /* Solarized Dark base background */
+}
+
 combobox box.linked, combobox box.linked * {
     background-color: #002b36; /* Match the background to Solarized Dark */
 }
@@ -72,14 +76,4 @@ combobox button.combo:hover {
 
 combobox button.combo:active {
     background-color: #586e75; /* Solarized Dark accent color for active state */
-}
-
-/* Styling for dropdown list items */
-combobox window.popup {
-    background-color: #002b36; /* Solarized Dark background for the dropdown */
-    color: #839496; /* Text color in the dropdown */
-}
-
-combobox window.popup * {
-    color: #839496; /* Ensure all child elements in the popup also use the text color */
 }

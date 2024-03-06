@@ -167,7 +167,7 @@ class LauncherWindow(Gtk.Window):
         hbox.pack_start(self.theme_combobox, False, False, 0)  # Add ComboBoxText to the hbox
         self.populate_theme_combobox()
         self.apply_default_theme()
-
+        self.set_active_theme_in_combobox('default')
         # Connect the 'changed' signal to handle theme change
         self.theme_combobox.connect("changed", self.on_theme_combobox_changed)
         
@@ -180,6 +180,16 @@ class LauncherWindow(Gtk.Window):
         self.listbox.connect("row-activated", self.on_row_activated)
     
     # Theme Selector Methods
+    def set_active_theme_in_combobox(self, active_theme_name):
+        # Find the index of the theme name and set it as active in the GtkComboBox
+        model = self.theme_combobox.get_model()
+        active_index = None
+        for index, row in enumerate(model):
+            if row[0] == active_theme_name:
+                active_index = index
+                break
+        if active_index is not None:
+            self.theme_combobox.set_active(active_index)
     def populate_theme_combobox(self):
         print("Populating theme combobox...")
         self.theme_combobox.remove_all()  # Clear existing items
