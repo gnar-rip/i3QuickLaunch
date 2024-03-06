@@ -165,10 +165,12 @@ class LauncherWindow(Gtk.Window):
         self.theme_combobox = Gtk.ComboBoxText()
         self.populate_theme_combobox()  # Method to populate ComboBoxText with themes
         hbox.pack_start(self.theme_combobox, False, False, 0)  # Add ComboBoxText to the hbox
+        self.populate_theme_combobox()
+        self.apply_default_theme()
 
         # Connect the 'changed' signal to handle theme change
         self.theme_combobox.connect("changed", self.on_theme_combobox_changed)
-        w
+        
         # Doubleclick + Enter Workaround
         # Connect to the 'realize' signal to hide details after the window is fully initialized
         self.connect("realize", lambda _: self.hide_all_details())
@@ -203,6 +205,10 @@ class LauncherWindow(Gtk.Window):
         css_provider = Gtk.CssProvider()
         css_provider.load_from_path(css_theme_path)
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)    
+    
+    def apply_default_theme(self):
+        default_theme_name = 'default'
+        self.apply_theme(default_theme_name + '.css')
     
     # Populat Program + Listing/Search Logic
     def populate_programs(self):
