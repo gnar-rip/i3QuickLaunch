@@ -1,0 +1,85 @@
+/* Base window background */
+window {
+    background-color: #002b36; /* Solarized Dark base background */
+    color: #839496; /* Solarized Dark base text */
+}
+
+/* Button styles */
+button {
+    background-color: #586e75; /* Solarized Dark back (lighter) */
+    border-radius: 5px;
+    color: #eee8d5; /* Solarized light text */
+    padding: 5px 10px;
+}
+
+button:hover {
+    background-color: #93a1a1; /* Solarized Dark cyan */
+}
+
+button:active {
+    background-color: #cb4b16; /* Solarized Dark orange */
+}
+
+/* Label styles - Assuming .label is a custom style class */
+label {
+    color: #93a1a1; /* Solarized Dark cyan for labels */
+}
+
+/* Entry styles (text inputs) */
+entry {
+    background-color: #073642; /* Solarized Dark base (darker) */
+    border-radius: 4px;
+    border: 1px solid #586e75; /* Solarized Dark base (lighter) for border */
+    padding: 5px 10px;
+    color: #839496; /* Solarized Dark base text */
+}
+
+scrollbar, scrollbar:hover {
+    background-color: #002b36; /* Solarized Dark base background for scrollbar */
+}
+
+scrollbar trough {
+    background-color: #073642; /* Solarized Dark base (darker) */
+}
+
+scrollbar slider, scrollbar slider:hover, scrollbar slider:active {
+    background-color: #586e75; /* Solarized Dark base (lighter) for slider */
+    border-radius: 10px;
+}
+
+list {
+    background-color: #002b36; /* Solarized Dark base background */
+}
+
+/* ComboBoxText styles for Solarized Dark Theme */
+combobox {
+    background-color: #002b36; /* Solarized Dark base background */
+    color: #839496; /* Solarized Dark base text */
+}
+
+combobox box.linked, combobox box.linked * {
+    background-color: #002b36; /* Match the background to Solarized Dark */
+}
+
+combobox button.combo {
+    border: none; /* Remove border */
+    background-color: #002b36; /* Solarized Dark base background for button */
+}
+
+combobox button.combo:hover {
+    background-color: #073642; /* Slightly lighter for hover, within Solarized Dark palette */
+}
+
+combobox button.combo:active {
+    background-color: #586e75; /* Solarized Dark accent color for active state */
+}
+
+/* Styling for dropdown list items */
+combobox window.popup {
+    background-color: #002b36; /* Solarized Dark background for the dropdown */
+    color: #839496; /* Text color in the dropdown */
+}
+
+combobox window.popup * {
+    color: #839496; /* Ensure all child elements in the popup also use the text color */
+}

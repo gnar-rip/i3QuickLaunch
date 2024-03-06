@@ -51,3 +51,36 @@ list {
     background-color: #1E1E2E;
 }
 
+/* ComboBoxText styles */
+combobox, combobox * {
+    background-color: #313244; /* Darker background for the combobox */
+    color: #CDD6F4; /* Text color */
+}
+
+combobox frame, combobox frame * {
+    border: none; /* Attempt to remove any border */
+    background-color: #313244; /* Ensure the frame matches the combobox background */
+}
+
+combobox entry {
+    color: #CDD6F4; /* Ensures text within the combobox entry is visible */
+}
+
+combobox button {
+    background-color: #313244; /* Button in combobox uses the same darker background */
+}
+
+combobox button:hover {
+    background-color: #403454; /* Slightly lighter shade for hover */
+}
+
+combobox button:active {
+    background-color: #4B3B5C; /* A different shade for active/button pressed */
+}
+
+combobox dropdown {
+    background-color: #1E1E2E; /* Background of the dropdown */
+    color: #CDD6F4; /* Text color in the dropdown */
+}
+
+
