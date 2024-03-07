@@ -45,17 +45,21 @@ def update_usage_count(program_name):
         
 def check_for_updates(package_name):
     if not package_name:
-        return False  # No update information available
+        return False
     try:
-        result = subprocess.check_output("checkupdates", shell=True, universal_newlines=True)
+        # Assuming /usr/bin is where checkupdates is located. Adjust as necessary.
+        result = subprocess.check_output("/usr/bin/checkupdates", shell=True, timeout=30, universal_newlines=True)
         updates = result.split('\n')
         for update in updates:
             if package_name in update:
-                return True  # Update is available for this package
-        return False  # No updates found for this package
+                return True
+        return False
     except subprocess.CalledProcessError as e:
         print(f"Error checking updates for {package_name}: {e}")
-        return None  # Indicate an error occurreds
+        return None
+    except subprocess.TimeoutExpired:
+        print(f"Timeout expired while checking updates for {package_name}")
+        return None
 
 class ProgramRow(Gtk.ListBoxRow):
     def __init__(self, name, command, usage_count=0, install_path=None, package_name=None, icon=None):
@@ -190,6 +194,7 @@ class LauncherWindow(Gtk.Window):
                 break
         if active_index is not None:
             self.theme_combobox.set_active(active_index)
+            
     def populate_theme_combobox(self):
         print("Populating theme combobox...")
         self.theme_combobox.remove_all()  # Clear existing items
