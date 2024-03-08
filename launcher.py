@@ -13,8 +13,9 @@ from gi.repository import GLib
 import logging
 
 # Cache for storing update check results
-update_check_cache = {}  # Format: {'package_name': (timestamp, has_update)}
-cache_duration = timedelta(minutes=5)  # Time duration for which cache is considered
+update_check_cache = {}  
+cache_duration = timedelta(minutes=5)
+
 # logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -58,7 +59,6 @@ def update_usage_count(program_name):
 def check_for_updates_async(package_name, callback):
     def run_check():
         now = datetime.now()
-        # Check if the result is cached and still valid
         if package_name in update_check_cache:
             last_check_time, cached_result = update_check_cache[package_name]
             if (now - last_check_time) < cache_duration:
@@ -72,31 +72,24 @@ def check_for_updates_async(package_name, callback):
             updates_available = any(package_name in line for line in result.splitlines())
             logging.info(f"Updates {'found' if updates_available else 'not found'} for '{package_name}'")
         except subprocess.CalledProcessError as e:
-            # This block catches the CalledProcessError, indicating an error or no updates
             logging.error(f"Error checking updates for '{package_name}': {e}")
             updates_available = None  # Use None to indicate that an error occurred
 
         # Update the cache with the new result
         update_check_cache[package_name] = (now, updates_available)
 
-        # Use GLib.idle_add to safely call the callback from the main thread
+        # Use GLib.idle_add to call the callback from the main thread
         GLib.idle_add(callback, package_name, updates_available)
-
     threading.Thread(target=run_check).start()
-
     threading.Thread(target=run_check).start()
-    
     threading.Thread(target=run_check).start()
     
 def update_check_result(package_name, has_update):
     if has_update is True:
-        # Code to update the UI indicating an update is available
         print(f"Update available for {package_name}")
     elif has_update is False:
-        # Code to update the UI indicating the package is up-to-date
         print(f"{package_name} is up to date")
     else:
-        # Code to handle when checkupdates fails or encounters an error
         print(f"Could not check updates for {package_name}")
         
 class ProgramRow(Gtk.ListBoxRow):
@@ -112,7 +105,7 @@ class ProgramRow(Gtk.ListBoxRow):
         self.box_outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.add(self.box_outer)
         
-        # Create a horizontal box to contain the icon and the label
+        # horiz. box
         hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         self.box_outer.pack_start(hbox, True, True, 0)
         
@@ -124,7 +117,6 @@ class ProgramRow(Gtk.ListBoxRow):
         # Create and pack the label into the hbox
         self.label = Gtk.Label(label=name, xalign=0)
         hbox.pack_start(self.label, True, True, 0)
-        #self.box_outer.pack_start(self.label, True, True, 0)
         
         # Initialize the memory usage progress bar
         self.memory_usage_bar = Gtk.ProgressBar()
@@ -136,7 +128,6 @@ class ProgramRow(Gtk.ListBoxRow):
         self.box_outer.pack_start(self.details, True, True, 0)
         
     def on_update_check_completed(self, package_name, has_update):
-        # Assuming this callback runs in the main thread thanks to GLib.idle_add
         if has_update is True:
             update_text = "Update available"
         elif has_update is False:
@@ -158,7 +149,7 @@ class ProgramRow(Gtk.ListBoxRow):
                 self.icon_image.set_from_pixbuf(scaled_pixbuf)
             except Exception as e:
                 print(f"Failed to load icon {icon_name}: {e}")
-                # Handle missing icon (optional)
+                
         
     def set_memory_usage(self, memory_usage):
         self.memory_usage_bar.set_fraction(memory_usage)
@@ -167,10 +158,8 @@ class ProgramRow(Gtk.ListBoxRow):
     
     def show_details(self, show):
         if show:
-            # Call the asynchronous update check function with the callback
             check_for_updates_async(self.package_name, self.on_update_check_completed)
         else:
-            # Hide details when not showing
             self.details.set_visible(False)
             self.memory_usage_bar.set_visible(False)
 
@@ -216,16 +205,14 @@ class LauncherWindow(Gtk.Window):
         
         # Create GTKComboBoxText for theme selection
         self.theme_combobox = Gtk.ComboBoxText()
-        self.populate_theme_combobox()  # Method to populate ComboBoxText with themes
+        self.populate_theme_combobox()  # theme pop method
         hbox.pack_start(self.theme_combobox, False, False, 0)  # Add ComboBoxText to the hbox
         self.populate_theme_combobox()
         self.apply_default_theme()
         self.set_active_theme_in_combobox('default')
-        # Connect the 'changed' signal to handle theme change
         self.theme_combobox.connect("changed", self.on_theme_combobox_changed)
         
         # Doubleclick + Enter Workaround
-        # Connect to the 'realize' signal to hide details after the window is fully initialized
         self.connect("realize", lambda _: self.hide_all_details())
         # Connect the list.box click so we can workaround the single click issue
         self.listbox.connect("button-press-event", self.on_listbox_click)
@@ -234,7 +221,6 @@ class LauncherWindow(Gtk.Window):
     
     # Theme Selector Methods
     def set_active_theme_in_combobox(self, active_theme_name):
-        # Find the index of the theme name and set it as active in the GtkComboBox
         model = self.theme_combobox.get_model()
         active_index = None
         for index, row in enumerate(model):
@@ -246,21 +232,19 @@ class LauncherWindow(Gtk.Window):
             
     def populate_theme_combobox(self):
         print("Populating theme combobox...")
-        self.theme_combobox.remove_all()  # Clear existing items
+        self.theme_combobox.remove_all()
         theme_files = get_theme_files('themes')
         print("Theme Files:", theme_files)
         for theme_file in theme_files:
             theme_name = os.path.splitext(os.path.basename(theme_file))[0]
             print("Theme Name:", theme_name)
-            self.theme_combobox.append_text(theme_name)  # Add theme name to the combobox
-        self.theme_combobox.set_active(0)  # Optionally set the first item as active by default
+            self.theme_combobox.append_text(theme_name)
+        self.theme_combobox.set_active(0)
     
     def on_theme_combobox_changed(self, combobox):
         print('Theme selection changed')
-        # Get the active text from the combobox, which is the selected theme name
         theme_name = combobox.get_active_text()
         if theme_name is not None:
-            # Append '.css' to the theme name to construct the filename
             self.apply_theme(theme_name + '.css')
             print("Theme applied:", theme_name)
     
@@ -277,10 +261,9 @@ class LauncherWindow(Gtk.Window):
     # Populat Program + Listing/Search Logic
     def populate_programs(self):
         desktop_files_dir = '/usr/share/applications'
-        program_usage = load_usage_counts()  # Load the usage counts
+        program_usage = load_usage_counts()
 
         programs = []
-        # Load all programs
         for item in os.listdir(desktop_files_dir):
             if item.endswith('.desktop'):
                 config = RawConfigParser()
@@ -302,7 +285,6 @@ class LauncherWindow(Gtk.Window):
         other_programs = sorted([p for p in programs if p not in top_programs], key=lambda x: x[0])
         # Clear the listbox before populating
         self.listbox.foreach(lambda widget: self.listbox.remove(widget))
-        #Add top programs
         for program in top_programs:
             program_row = ProgramRow(*program)
             self.listbox.add(program_row)
@@ -334,7 +316,7 @@ class LauncherWindow(Gtk.Window):
     # Clear the listbox before repopulating based on search
         self.listbox.foreach(lambda widget: self.listbox.remove(widget))
 
-        desktop_files_dir = '/usr/share/applications'  # Ensure this is defined outside the loop
+        desktop_files_dir = '/usr/share/applications'
         program_usage = load_usage_counts()
         if search_text == "":
         # If the search field is cleared, repopulate with favorites
@@ -358,8 +340,6 @@ class LauncherWindow(Gtk.Window):
                     continue
 
         self.listbox.show_all()
-        # self.filter_programs(search_text)
-        # Explicitly call hide_all_details to ensure all program details are hidden after repopulation
         self.hide_all_details()
         
     def on_listbox_click(self, widget, event):
@@ -373,7 +353,6 @@ class LauncherWindow(Gtk.Window):
         if self.last_action_type == 'keyboard':
             if row is not None:
                 row.launch_program()
-        # Reset the flag after handling the activation
         self.last_action_type = None
                 
     def on_key_press(self, widget, event):
@@ -400,7 +379,6 @@ class LauncherWindow(Gtk.Window):
                 simplified_proc_name = proc_name.replace(" ", "")
         
                 if simplified_app_name in simplified_proc_name:
-                    # Debugging output to verify matching and memory usage
                     print(f"Matching process: {proc.info['name']} with memory usage: {proc.info['memory_percent']}%")
                     total_memory_usage += proc.info['memory_percent']
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
