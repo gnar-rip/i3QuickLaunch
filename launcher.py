@@ -45,21 +45,19 @@ def update_usage_count(program_name):
         
 def check_for_updates(package_name):
     if not package_name:
-        return False
+        return False  # No update information available
     try:
-        # Assuming /usr/bin is where checkupdates is located. Adjust as necessary.
-        result = subprocess.check_output("/usr/bin/checkupdates", shell=True, timeout=30, universal_newlines=True)
+        # Call checkupdates and capture its output
+        result = subprocess.check_output("checkupdates", shell=True, universal_newlines=True)
         updates = result.split('\n')
         for update in updates:
-            if package_name in update:
-                return True
-        return False
+            if update.startswith(package_name + " "):
+                return True  # Update is available for this package
+        return False  # No updates found for this package
     except subprocess.CalledProcessError as e:
         print(f"Error checking updates for {package_name}: {e}")
-        return None
-    except subprocess.TimeoutExpired:
-        print(f"Timeout expired while checking updates for {package_name}")
-        return None
+        return None  # Indicate an error occurred
+
 
 class ProgramRow(Gtk.ListBoxRow):
     def __init__(self, name, command, usage_count=0, install_path=None, package_name=None, icon=None):
