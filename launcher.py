@@ -7,6 +7,16 @@ from configparser import RawConfigParser, NoSectionError
 import psutil
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GdkPixbuf, Gio
+import threading
+from datetime import datetime, timedelta
+from gi.repository import GLib
+import logging
+
+# Cache for storing update check results
+update_check_cache = {}  # Format: {'package_name': (timestamp, has_update)}
+cache_duration = timedelta(minutes=5)  # Time duration for which cache is considered
+# logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def get_theme_files(directory):
         path = os.path.join(os.path.dirname(__file__), directory)
@@ -42,23 +52,53 @@ def update_usage_count(program_name):
     usage_counts[program_name] = usage_counts.get(program_name, 0) + 1
     with open(usage_file_path, 'w') as file:
         json.dump(usage_counts, file, indent=4)
+
+# Package update logic
         
-def check_for_updates(package_name):
-    if not package_name:
-        return False  # No update information available
-    try:
-        # Call checkupdates and capture its output
-        result = subprocess.check_output("checkupdates", shell=True, universal_newlines=True)
-        updates = result.split('\n')
-        for update in updates:
-            if update.startswith(package_name + " "):
-                return True  # Update is available for this package
-        return False  # No updates found for this package
-    except subprocess.CalledProcessError as e:
-        print(f"Error checking updates for {package_name}: {e}")
-        return None  # Indicate an error occurred
+def check_for_updates_async(package_name, callback):
+    def run_check():
+        now = datetime.now()
+        # Check if the result is cached and still valid
+        if package_name in update_check_cache:
+            last_check_time, cached_result = update_check_cache[package_name]
+            if (now - last_check_time) < cache_duration:
+                logging.info(f"Using cached update check for '{package_name}': {cached_result}")
+                GLib.idle_add(callback, package_name, cached_result)
+                return
 
+        # Perform the update check if not cached or cache is outdated
+        try:
+            result = subprocess.check_output(["checkupdates"], universal_newlines=True)
+            updates_available = any(package_name in line for line in result.splitlines())
+            logging.info(f"Updates {'found' if updates_available else 'not found'} for '{package_name}'")
+        except subprocess.CalledProcessError as e:
+            # This block catches the CalledProcessError, indicating an error or no updates
+            logging.error(f"Error checking updates for '{package_name}': {e}")
+            updates_available = None  # Use None to indicate that an error occurred
 
+        # Update the cache with the new result
+        update_check_cache[package_name] = (now, updates_available)
+
+        # Use GLib.idle_add to safely call the callback from the main thread
+        GLib.idle_add(callback, package_name, updates_available)
+
+    threading.Thread(target=run_check).start()
+
+    threading.Thread(target=run_check).start()
+    
+    threading.Thread(target=run_check).start()
+    
+def update_check_result(package_name, has_update):
+    if has_update is True:
+        # Code to update the UI indicating an update is available
+        print(f"Update available for {package_name}")
+    elif has_update is False:
+        # Code to update the UI indicating the package is up-to-date
+        print(f"{package_name} is up to date")
+    else:
+        # Code to handle when checkupdates fails or encounters an error
+        print(f"Could not check updates for {package_name}")
+        
 class ProgramRow(Gtk.ListBoxRow):
     def __init__(self, name, command, usage_count=0, install_path=None, package_name=None, icon=None):
         super().__init__()
@@ -95,6 +135,20 @@ class ProgramRow(Gtk.ListBoxRow):
         self.details.set_visible(False)
         self.box_outer.pack_start(self.details, True, True, 0)
         
+    def on_update_check_completed(self, package_name, has_update):
+        # Assuming this callback runs in the main thread thanks to GLib.idle_add
+        if has_update is True:
+            update_text = "Update available"
+        elif has_update is False:
+            update_text = "Up to date"
+        else:
+            update_text = "No Data"  # Couldn't check for updates or an error occurred
+        
+        detail_text = f"Usage Count: {self.usage_count}\nInstall Path: {self.install_path}\n{update_text}"
+        self.details.set_text(detail_text)
+        self.details.set_visible(True)
+        self.memory_usage_bar.set_visible(True)
+        
     def set_icon(self, icon_name):
         if icon_name:
             icon_theme = Gtk.IconTheme.get_default()
@@ -113,15 +167,12 @@ class ProgramRow(Gtk.ListBoxRow):
     
     def show_details(self, show):
         if show:
-            has_update = check_for_updates(self.package_name)
-            if has_update is None:
-                update_text = "No Data"  # no update/couldnt check for update
-            else:
-                update_text = "Update available" if has_update else "Up to date"
-            update_text = "Update available" if has_update else "Up to date"
-            self.details.set_text(f"Usage Count: {self.usage_count}\nInstall Path: {self.install_path}\n{update_text}")
-        self.details.set_visible(show)
-        self.memory_usage_bar.set_visible(show and self.has_memory_data)
+            # Call the asynchronous update check function with the callback
+            check_for_updates_async(self.package_name, self.on_update_check_completed)
+        else:
+            # Hide details when not showing
+            self.details.set_visible(False)
+            self.memory_usage_bar.set_visible(False)
 
     def launch_program(self):
         update_usage_count(self.name)
