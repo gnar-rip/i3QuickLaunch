@@ -11,6 +11,7 @@ import threading
 from datetime import datetime, timedelta
 from gi.repository import GLib
 import logging
+import i3ipc
 
 # Cache for storing update check results
 update_check_cache = {}  
@@ -169,7 +170,8 @@ class ProgramRow(Gtk.ListBoxRow):
 
 class LauncherWindow(Gtk.Window):
     def __init__(self):
-        super().__init__(title="Program Launcher")
+        super().__init__(title="i3QuickLaunch")
+        self.set_wmclass("i3QuickLaunch", "i3QuickLaunch")
         self.last_action_type = None
         self.connect("key-press-event", self.on_key_press)
         self.set_border_width(10)
@@ -212,12 +214,24 @@ class LauncherWindow(Gtk.Window):
         self.set_active_theme_in_combobox('default')
         self.theme_combobox.connect("changed", self.on_theme_combobox_changed)
         
+        self.connect("realize", self.on_realize)
         # Doubleclick + Enter Workaround
         self.connect("realize", lambda _: self.hide_all_details())
         # Connect the list.box click so we can workaround the single click issue
         self.listbox.connect("button-press-event", self.on_listbox_click)
         # Allow "enter" to launch programs. Fixed double click override.
         self.listbox.connect("row-activated", self.on_row_activated)
+    
+    def on_realize(self, widget):
+        # Use GLib.timeout_add to delay the execution, ensuring the window is visible to i3
+        GLib.timeout_add(100, self.make_window_floating)
+
+    def make_window_floating(self):
+        # Create a connection to i3
+        i3 = i3ipc.Connection()
+        # Send a command to i3 to make the window with the class "i3QuickLaunch" floating
+        i3.command('[class="i3QuickLaunch"] floating enable')
+        return False  # Return False to prevent the timeout_add from repeating
     
     # Theme Selector Methods
     def set_active_theme_in_combobox(self, active_theme_name):
